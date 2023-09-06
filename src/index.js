@@ -12,7 +12,12 @@ app.use(cors());
 
 app.use('/api/v1', require('./routes/affiliates.route'));
 
-
+app.use('/', (req, res) => {
+    res.status(200).json({
+        message: 'Welcome to the API',
+        status: 'success',
+    });
+});
 
 app.listen(config.port, async () => {
     const dbConnection = await db;
