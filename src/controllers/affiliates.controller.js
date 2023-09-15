@@ -15,7 +15,7 @@ const createAffiliate = async (req, res) => {
     if (isAffiliateCreated) {
         return res.status(400).json({
             success: false,
-            message: "Affiliate already created",
+            message: "El afiliado ya existe",
         });
     }
 
@@ -31,13 +31,13 @@ const createAffiliate = async (req, res) => {
         return res.status(201).json({
             success: true,
             id: affiliate._id,
-            message: "Affiliate created!",
+            message: "Afiliado creado correctamente!",
         });
     } catch (err) {
         console.log(err);
         return res.status(400).json({
             err,
-            message: "Affiliate not created!",
+            message: "El afiliado no fue creado, intenta mas tarde!",
         });
     }
 };
