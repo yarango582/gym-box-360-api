@@ -1,4 +1,5 @@
 const Assistance = require('../models/assistance.model');
+const Affiliate = require('../models/affiliates.model');
 
 const createAssistance = async (req, res) => {
     const reqBody = req.body;
@@ -9,7 +10,17 @@ const createAssistance = async (req, res) => {
             error: 'You must provide an assistance',
         });
     }
-    const isAssistanceCreatedSameDay = await Assistance.find({ fechaDeAsistencia: reqBody.fechaDeAsistencia });
+
+    const affiliate = Affiliate.findOne({numeroDocumento: reqBody.numeroDocumento});
+
+    if (!affiliate) {
+        return res.status(400).json({
+            success: false,
+            error: 'This user is not an affiliate',
+        });
+    }
+
+    const isAssistanceCreatedSameDay = await Assistance.find({ fechaDeAsistencia: reqBody.fechaDeAsistencia, idAfiliado: affiliate._id });
 
     if (isAssistanceCreatedSameDay.length) {
         return res.status(400).json({
