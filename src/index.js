@@ -11,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use('/api/v1', require('./routes/affiliates.route'));
+app.use('/api/v1', require('./routes/assistance.route'));
 
 app.use('/', (req, res) => {
     res.status(200).json({
