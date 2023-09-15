@@ -20,7 +20,7 @@ const createAssistance = async (req, res) => {
         });
     }
 
-    const isAssistanceCreatedSameDay = await Assistance.find({ fechaDeAsistencia: reqBody.fechaDeAsistencia, idAfiliado: affiliate._id });
+    const isAssistanceCreatedSameDay = await Assistance.find({ fechaDeAsistencia: reqBody.fechaDeAsistencia, numeroDocumento: reqBody.numeroDocumento });
 
     if (isAssistanceCreatedSameDay.length) {
         return res.status(400).json({
