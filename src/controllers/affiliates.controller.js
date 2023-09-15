@@ -10,6 +10,15 @@ const createAffiliate = async (req, res) => {
         });
     }
 
+    const isAffiliateCreated =  Affiliate.find({ numeroDocumento: reqBody.numeroDocumento });
+
+    if (isAffiliateCreated) {
+        return res.status(400).json({
+            success: false,
+            message: "Affiliate already created",
+        });
+    }
+
     const affiliate = new Affiliate(reqBody);
 
     if (!affiliate) {

@@ -8,4 +8,4 @@ const AssistanceSchema = new Schema({
     fechaDeAsistencia: { type: Date, required: true },
 });
 
-model.exports = mongoose.model('assistance', AssistanceSchema);
+module.exports = mongoose.model('assistance', AssistanceSchema);
