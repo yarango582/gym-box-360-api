@@ -13,6 +13,8 @@ app.use(cors());
 app.use('/api/v1', require('./routes/affiliates.route'));
 app.use('/api/v1', require('./routes/assistance.route'));
 app.use('/api/v1', require('./routes/users.route'));
+app.use('/api/v1', require('./routes/affiliatesSuscription.route'));
+app.use('/api/v1', require('./routes/payments.route'));
 
 app.listen(config.port, async () => {
     const dbConnection = await db;
