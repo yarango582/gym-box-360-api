@@ -3,25 +3,25 @@ const bcrypt = require('bcrypt');
 
 const login = async (req, res) => {
     try {
-
         const user = await UserModel.findOne({ numeroDocumento: req.body.numeroDocumento });
+
+        if(!user) {
+            return res.status(400).json({ success: false, message: "Usuario no encontrado!" });
+        }
+
         const isPasswordValid = await bcrypt.compare(req.body.contrasena, user.contrasena);
 
         if (!isPasswordValid) {
-            res.status(400).json({ success: false, message: "Usuario o contraseña incorrectos" });
+            return res.status(400).json({ success: false, message: "Usuario o contraseña incorrectos" });
         }
 
-        if (user) {
-            res.status(200).json({
-                success: true,
-                message: "Usuario logueado correctamente",
-                data: user,
-            });
-        } else {
-            res.status(400).json({ message: "Usuario o contraseña incorrectos" });
-        }
+        return res.status(200).json({
+            success: true,
+            message: "Usuario logueado correctamente",
+            data: user,
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -40,7 +40,7 @@ const register = async (req, res) => {
             data: user,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success:false, message: error.message });
     }
 };
 
