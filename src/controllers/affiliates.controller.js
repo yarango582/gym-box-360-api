@@ -10,7 +10,7 @@ const createAffiliate = async (req, res) => {
         });
     }
 
-    const isAffiliateCreated =  Affiliate.find({ numeroDocumento: reqBody.numeroDocumento });
+    const isAffiliateCreated =  await Affiliate.findOne({ numeroDocumento: reqBody.numeroDocumento });
 
     if (isAffiliateCreated) {
         return res.status(400).json({
@@ -46,11 +46,11 @@ const getAffiliates = async (req, res) => {
     try {
         const affiliates = await Affiliate.find();
         if (!affiliates.length) {
-            return res.status(404).json({ success: false, error: `Affiliates not found` });
+            return res.status(404).json({ success: false, message: `No Hay afiliados!` });
         }
-        return res.status(200).json({ success: true, data: affiliates });
+        return res.status(200).json({ success: true, message: "OK", data: affiliates });
     } catch (err) {
-        return res.status(400).json({ success: false, error: err });
+        return res.status(400).json({ success: false, message: err });
     }
 };
 

@@ -1,7 +1,6 @@
-const affiliatesSuscriptionModel= require('../models/affiliatesSuscription.model');
+const affiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
 
 const createAffiliateSuscriptionOrUpdate = async (req, res) => {
-
     try {
         const reqBody = req.body;
 
@@ -12,16 +11,14 @@ const createAffiliateSuscriptionOrUpdate = async (req, res) => {
             });
         }
 
-        const isAffiliateSuscriptionCreated = await affiliatesSuscriptionModel.find({ idAfiliado: reqBody.idAfiliado });
+        const isAffiliateSuscriptionCreated = await affiliatesSuscriptionModel.findOne({ idAfiliado: reqBody.idAfiliado });
 
         // update suscription
         if (isAffiliateSuscriptionCreated) {
-            affiliatesSuscriptionModel.updateOne({ idAfiliado: reqBody.idAfiliado }, reqBody, function (err, res) {
-                if (err) throw err;
-                return res.status(201).json({
-                    success: true,
-                    message: "Suscripcion actualizada correctamente!",
-                });
+            await affiliatesSuscriptionModel.updateOne({ idAfiliado: reqBody.idAfiliado }, reqBody);
+            return res.status(201).json({
+                success: true,
+                message: "Suscripcion actualizada correctamente!",
             });
         }
 
@@ -40,15 +37,15 @@ const createAffiliateSuscriptionOrUpdate = async (req, res) => {
         });
 
     } catch (error) {
+        console.log(error);
         return res.status(400).json({
             success:false,
             error,
             message: "La suscripcion no fue creada, intenta mas tarde!",
         });
     }
-
 };
 
 module.exports = {
     createAffiliateSuscriptionOrUpdate,
-}
+};
