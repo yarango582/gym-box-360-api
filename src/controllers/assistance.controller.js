@@ -1,5 +1,6 @@
 const Assistance = require('../models/assistance.model');
 const Affiliate = require('../models/affiliates.model');
+const AffiliateSuscription = require('../models/affiliatesSuscription.model');
 
 const createAssistance = async (req, res) => {
     const reqBody = req.body;
@@ -30,6 +31,16 @@ const createAssistance = async (req, res) => {
         },
     });
 
+    const isActiveSuscription = await AffiliateSuscription.findOne({
+        idAfiliado: affiliate._id,
+    });
+
+    if (affiliate.diasDeCortesia === 0 && !isActiveSuscription || isActiveSuscription.activo === false) {
+        return res.status(400).json({
+            success: false,
+            message: 'El afiliado no tiene una suscripcion activa',
+        });
+    }
 
     if (isAssistanceCreatedSameDay.length) {
         return res.status(400).json({

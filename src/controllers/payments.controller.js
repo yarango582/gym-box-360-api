@@ -12,6 +12,21 @@ const createPayment = async (req, res) => {
             });
         }
 
+        // const isPaymentOnSameDay = await paymentsModel.find({
+        //     idAfiliado: reqBody.idAfiliado,
+        //     fechaDePago: {
+        //         $gte: new Date(reqBody.fechaDePago).setHours(0, 0, 0),
+        //         $lt: new Date(reqBody.fechaDePago).setHours(23, 59, 59),
+        //     },
+        // });
+
+        // if(isPaymentOnSameDay.length > 0) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "No es necesario registrar el pago, ya se encuentra registrado",
+        //     });
+        // }
+
         const payment = new paymentsModel(reqBody);
 
         if (!payment) {
