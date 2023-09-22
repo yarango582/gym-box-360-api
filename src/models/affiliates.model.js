@@ -20,6 +20,7 @@ const AffiliatesSchema = new Schema({
   contactoEmergenciaCelular: { type: Number, required: false },
   horarioElegido: { type: String, required: true },
   diasDeCortesia: { type: Number, required: false, default: 0 },
+  sede: { type: String, required: false },
 });
 
 module.exports = mongoose.model("affiliates", AffiliatesSchema);
