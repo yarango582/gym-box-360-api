@@ -8,6 +8,7 @@ const AffiliatesSuscriptionSchema = new Schema({
     fechaDePago: { type: Date, required: true },
     medioDePago: { type: String, required: true },
     activo: { type: Boolean, required: true },
+    mesesPagados: { type: Number, required: false },
 });
 
 module.exports = mongoose.model("affiliatesSuscription", AffiliatesSuscriptionSchema);

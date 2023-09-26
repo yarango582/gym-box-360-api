@@ -18,7 +18,10 @@ const login = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Usuario logueado correctamente",
-            data: user,
+            data: {
+                _id: user._id,
+                permissions: user.permissions,
+            },
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });

@@ -4,5 +4,6 @@ const affiliatesSuscriptionController = require('../controllers/affiliatesSuscri
 const router = express.Router();
 
 router.post('/affiliatesSuscription', affiliatesSuscriptionController.createAffiliateSuscriptionOrUpdate);
+router.get('/affiliatesSuscription/:idAfiliado', affiliatesSuscriptionController.getAffiliateSuscriptionById);
 
 module.exports = router;

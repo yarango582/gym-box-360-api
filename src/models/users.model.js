@@ -5,6 +5,7 @@ const UsersSchema = new Schema({
     _id: { type: Schema.Types.ObjectId, required: true, auto: true },
     numeroDocumento: { type: Number, required: true },
     contrasena: { type: String, required: true },
+    permissions: { type: Schema.Types.Array, required: true },
 });
 
 module.exports = mongoose.model("users", UsersSchema);

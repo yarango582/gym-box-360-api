@@ -1,69 +1,90 @@
-const affiliatesSuscriptionModel = require('../models/affiliatesSuscription.model');
-const paymentsModel = require('../models/payments.model');
+const AffiliateSuscriptionModel = require('../models/affiliatesSuscription.model');
+const PaymentsModel = require('../models/payments.model');
 
 const createAffiliateSuscriptionOrUpdate = async (req, res) => {
+
+    const reqBody = req.body;
+
+    if (!reqBody) {
+        return res.status(400).json({
+            success: false,
+            error: "You must provide an affiliate suscription",
+        });
+    }
+
     try {
-        const reqBody = req.body;
 
-        if (!reqBody) {
-            return res.status(400).json({
-                success: false,
-                error: "Debes proveer un afiliado",
-            });
-        }
+        const isSuscriptionCretead = await AffiliateSuscriptionModel.findOne({ idAfiliado: reqBody.idAfiliado, activo: true });
 
-        const isAffiliateSuscriptionCreated = await affiliatesSuscriptionModel.findOne({ idAfiliado: reqBody.idAfiliado });
-
-        // update suscription
-        if (isAffiliateSuscriptionCreated) {
-            await affiliatesSuscriptionModel.updateOne({ idAfiliado: reqBody.idAfiliado }, reqBody);
-            const payment = new paymentsModel({
-                idAfiliado: reqBody.idAfiliado,
-                fechaDePago: reqBody.fechaDePago,
-                medioDePago: reqBody.medioDePago,
-                valorDePago: reqBody.valorDePago,
-            });
+        if (isSuscriptionCretead) {
+            // acualizar suscripcion y suma la cantidad de mesesPagados, tambien registra el pago en payments
+            const affiliateSuscription = await AffiliateSuscriptionModel.findOneAndUpdate({ idAfiliado: reqBody.idAfiliado, activo: true }, { $inc: { mesesPagados: reqBody.mesesPagados } }, { new: true });
+            const payment = new PaymentsModel(reqBody);
             await payment.save();
             return res.status(201).json({
                 success: true,
-                message: "Suscripcion actualizada correctamente y pago registrado!",
+                message: "Suscripcion actualizada correctamente!",
+                data: affiliateSuscription,
             });
         }
 
-        // create suscription
-        const affiliateSuscription = new affiliatesSuscriptionModel(reqBody);
+        const affiliateSuscription = new AffiliateSuscriptionModel(reqBody);
 
-        // create payment
-        const payment = new paymentsModel({
-            idAfiliado: reqBody.idAfiliado,
-            fechaDePago: reqBody.fechaDePago,
-            medioDePago: reqBody.medioDePago,
-            valorDePago: reqBody.valorDePago,
-        });
-
-        if (!affiliateSuscription || !payment) {
-            return res.status(400).json({ success: false, message: err });
+        if (!affiliateSuscription) {
+            return res.status(400).json({ success: false, message: 'La suscription no fue creada, intenta mas tarde!' });
         }
 
-        await affiliateSuscription.save();
+        const payment = new PaymentsModel(reqBody);
         await payment.save();
+        await affiliateSuscription.save();
 
         return res.status(201).json({
             success: true,
             id: affiliateSuscription._id,
             message: "Suscripcion creada correctamente!",
+            data: affiliateSuscription,
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            err,
+            message: "La suscripcion no fue creada, intenta mas tarde!",
+        });
+    }
+
+
+}
+
+
+const getAffiliateSuscriptionById = async (req, res) => {
+    try {
+        const data = req.params;
+        const affiliateSuscription = await AffiliateSuscriptionModel.findOne({ idAfiliado: data.idAfiliado, activo: true });
+
+        if (!affiliateSuscription) {
+            return res.status(404).json({
+                success: false,
+                message: "No se encontraron suscripciones activas",
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Hay una suscripcion activa",
+            data: affiliateSuscription,
         });
 
     } catch (error) {
         console.log(error);
         return res.status(400).json({
-            success:false,
+            success: false,
             error,
-            message: "La suscripcion no fue creada, intenta mas tarde!",
+            message: "No se encontraron suscripciones activas",
         });
     }
 };
 
 module.exports = {
     createAffiliateSuscriptionOrUpdate,
+    getAffiliateSuscriptionById,
 };
