@@ -1,6 +1,8 @@
 const Assistance = require('../models/assistance.model');
 const Affiliate = require('../models/affiliates.model');
 const AffiliateSuscription = require('../models/affiliatesSuscription.model');
+const moment = require('moment-timezone');
+
 
 const createAssistance = async (req, res) => {
     try {
@@ -119,10 +121,15 @@ const getAssistanceById = async (req, res) => {
 const getAssistancesTodayWithAffiliate = async (req, res) => {
 
     try {
+        const colombiaTimezone = 'America/Bogota'; // Set the timezone to Colombia
+        const currentDate = moment.tz(colombiaTimezone).toDate();
+        const startOfDay = moment(currentDate).startOf('day').toDate();
+        const endOfDay = moment(currentDate).endOf('day').toDate();
+
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
-                $gte: new Date().setHours(0, 0, 0),
-                $lt: new Date().setHours(23, 59, 59),
+                $gte: startOfDay,
+                $lt: endOfDay,
             },
         });
 
@@ -163,11 +170,14 @@ const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
                 const numeroDocumento = affiliateSuscription?.idAfiliado?.numeroDocumento;
                 if (numeroDocumento) {
                     try {
-                        const assistance = await Assistance.findOne({
-                            numeroDocumento,
+                        const colombiaTimezone = 'America/Bogota'; // Set the timezone to Colombia
+                        const currentDate = moment.tz(colombiaTimezone).toDate();
+                        const startOfDay = moment(currentDate).startOf('day').toDate();
+                        const endOfDay = moment(currentDate).endOf('day').toDate();
+                        const assistance = await Assistance.find({
                             fechaDeAsistencia: {
-                                $gte: new Date().setHours(0, 0, 0),
-                                $lt: new Date().setHours(23, 59, 59),
+                                $gte: startOfDay,
+                                $lt: endOfDay,
                             },
                         });
                         if (!assistance) {
