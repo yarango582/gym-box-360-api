@@ -116,8 +116,88 @@ const getAssistanceById = async (req, res) => {
     }
 };
 
+const getAssistancesTodayWithAffiliate = async (req, res) => {
+
+    try {
+        const assistances = await Assistance.find({
+            fechaDeAsistencia: {
+                $gte: new Date().setHours(0, 0, 0),
+                $lt: new Date().setHours(23, 59, 59),
+            },
+        });
+
+        if (!assistances.length) {
+            return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
+        }
+
+        const assistancesWithAffiliate = await Promise.all(assistances.map(async (assistance) => {
+            const affiliate = await Affiliate.findOne({
+                numeroDocumento: assistance.numeroDocumento,
+            });
+            // deuelve la asistencia con el afiliado y suscripcion
+
+            const suscription = await AffiliateSuscription.findOne({
+                idAfiliado: affiliate._id,
+            });
+
+            return {
+                ...assistance._doc,
+                affiliate: affiliate._doc,
+                suscription: suscription._doc,
+            };
+
+        }));
+
+        return res.status(200).json({ success: true, message: 'ok', data: assistancesWithAffiliate });
+    } catch (err) {
+        return res.status(400).json({ success: false, error: err });
+    }
+};
+
+const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
+    try {
+        const affiliatesWithSuscriptions = await AffiliateSuscription.find().populate('idAfiliado');
+
+        const results = await Promise.allSettled(
+            affiliatesWithSuscriptions.map(async (affiliateSuscription) => {
+                const numeroDocumento = affiliateSuscription?.idAfiliado?.numeroDocumento;
+                if (numeroDocumento) {
+                    try {
+                        const assistance = await Assistance.findOne({
+                            numeroDocumento,
+                            fechaDeAsistencia: {
+                                $gte: new Date().setHours(0, 0, 0),
+                                $lt: new Date().setHours(23, 59, 59),
+                            },
+                        });
+                        if (!assistance) {
+                            return { status: 'fulfilled', value: affiliateSuscription };
+                        }
+                    } catch (error) {
+                        return { status: 'rejected', reason: String(error) };
+                    }
+                }
+            })
+        );
+
+        const affiliatesFulfilled = results.map((result) => {
+            if(result.status === 'fulfilled') {
+                return {
+                    affiliate: result.value,
+                }
+            }
+        });
+        return res.status(200).json({ success: true, message: 'ok', data: affiliatesFulfilled });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: 'Hubo un error al obtener los datos!', error });
+    }
+};
+
+
 module.exports = {
     createAssistance,
     getAssistances,
-    getAssistanceById
+    getAssistanceById,
+    getAssistancesTodayWithAffiliate,
+    getNonAttendanceWithAffiliateAndSuscription,
 };
