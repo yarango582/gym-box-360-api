@@ -38,6 +38,7 @@ const createAssistance = async (req, res) => {
         // valida si existe una suscripcion
         const isActiveSuscription = await AffiliateSuscription.findOne({
             idAfiliado: affiliate._id,
+            activo: true,
         });
 
         // valida si tiene dias de cortesia y si la suscripcion esta activa
@@ -48,12 +49,14 @@ const createAssistance = async (req, res) => {
             });
         }
 
-        // actualiza los dias de cortesia
-        await Affiliate.updateOne({
-            numeroDocumento: reqBody.numeroDocumento,
-        }, {
-            diasDeCortesia: affiliate.diasDeCortesia - 1,
-        });
+        // actualiza los dias de cortesia del afiliado si los dias de cortesia ya se acabaron no se actualiza
+
+        if (affiliate.diasDeCortesia > 0) {
+            await Affiliate.updateOne(
+                { _id: affiliate._id },
+                { diasDeCortesia: affiliate.diasDeCortesia - 1 }
+            );
+        }
 
         // valida si ya existe una asistencia registrada el mismo dia
         if (isAssistanceCreatedSameDay.length) {
