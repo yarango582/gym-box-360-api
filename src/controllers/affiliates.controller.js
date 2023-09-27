@@ -54,7 +54,20 @@ const getAffiliates = async (req, res) => {
     }
 };
 
+const getAffiliateByNumeroDocumento = async (req, res) => {
+    try {
+        const affiliate = await Affiliate.findOne({ numeroDocumento: req.params.numeroDocumento });
+        if (!affiliate) {
+            return res.status(404).json({ success: false, message: `No se encontro el afiliado con el numero de documento ${req.params.numeroDocumento}!` });
+        }
+        return res.status(200).json({ success: true, message: "OK", data: affiliate });
+    } catch (err) {
+        return res.status(400).json({ success: false, message: err });
+    }
+};
+
 module.exports = {
     createAffiliate,
     getAffiliates,
+    getAffiliateByNumeroDocumento,
 };

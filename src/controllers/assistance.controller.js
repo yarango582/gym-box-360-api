@@ -98,7 +98,7 @@ const getAssistances = async (req, res) => {
         if (!assistances.length) {
             return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
         }
-        return res.status(200).json({ success: true, data: assistances });
+        return res.status(200).json({ success: true, message: 'ok', data: assistances });
     } catch (err) {
         return res.status(400).json({ success: false, error: err });
     }
