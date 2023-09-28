@@ -128,12 +128,12 @@ const getAssistanceById = async (req, res) => {
 
 const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
-        const date = new Date();
-        const today = moment(date).format('YYYY-MM-DD');
-        const todayWithHours = `${today}:00:00:00}`;
+        const dateColombiaFromMidnight = new Date().toLocaleString('es-CO', {
+            timeZone: 'America/Bogota',
+        });
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
-                $gte: todayWithHours,
+                $gte: dateColombiaFromMidnight,
             },
         });
         if (!assistances.length) {
