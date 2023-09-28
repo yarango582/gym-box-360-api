@@ -131,19 +131,18 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
         // obtenen ano mes y dia de hoy para filtrar las asistencias con formato y zona horaria de colombia
         const year = moment(new Date()).utcOffset('-05:00').format('YYYY');
         const month = moment(new Date()).utcOffset('-05:00').format('MM');
-        const day = moment(new Date()).utcOffset('-05:00').format('DD');
+        const day = Number(moment(new Date()).utcOffset('-05:00').format('DD'));
 
         const assistances = await Assistance.find();
         if (!assistances.length) {
             return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
         }
+
         const assistancesToday = assistances.filter((assistance) => {
-            const assistanceDate = new Date(assistance.fechaDeAsistencia);
-            return (
-                assistanceDate.getUTCFullYear() === Number(year) &&
-                assistanceDate.getUTCMonth() === Number(month) &&
-                assistanceDate.getUTCDate() === Number(day)
-            )
+            const assistanceYear = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('YYYY');
+            const assistanceMonth = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('MM');
+            const assistanceDay = Number(moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('DD'));
+            return assistanceYear === year && assistanceMonth === month && assistanceDay === day-1;
         });
 
         const assistancesWithAffiliate = await Promise.all(assistancesToday.map(async (assistance) => {
