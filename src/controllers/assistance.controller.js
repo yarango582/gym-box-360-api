@@ -28,14 +28,22 @@ const createAssistance = async (req, res) => {
             });
         }
 
-        const today = moment(new Date()).format('YYYY-MM-DD');
+        const day = moment(new Date()).utcOffset('-05:00').format('DD');
+
         // valida si ya existe una asistencia registrada el mismo dia
-        const isAssistanceCreatedSameDay = await Assistance.find({
-            numeroDocumento: reqBody.numeroDocumento,
-            fechaDeAsistencia: {
-                $gte: today
-            },
+        const assistances = await Assistance.find();
+
+        const isAssistanceCreatedSameDay = assistances.filter((assistance) => {
+            const assistanceDay = Number(moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('DD'));
+            return assistanceDay === day;
         });
+
+        if(isAssistanceCreatedSameDay.length > 1){
+            return res.status(400).json({
+                success: false,
+                message: 'No es necesario registrar la asistencia, ya se encuentra registrada',
+            });
+        }
 
         // valida si existe una suscripcion
         const isActiveSuscription = await AffiliateSuscription.findOne({
@@ -43,7 +51,7 @@ const createAssistance = async (req, res) => {
             activo: true,
         });
 
-        if (!isActiveSuscription || isActiveSuscription?.activo === false) {
+        if (!isActiveSuscription) {
             return res.status(400).json({
                 success: false,
                 message: 'El afiliado no tiene una suscripcion activa',
@@ -51,7 +59,7 @@ const createAssistance = async (req, res) => {
         }
 
         // valida si tiene dias de cortesia
-        if (affiliate.diasDeCortesia === 0 && isActiveSuscription?.activo === false) {
+        if (affiliate.diasDeCortesia === 0 && isActiveSuscription.activo === false) {
             return res.status(400).json({
                 success: false,
                 message: 'El afiliado no tiene una suscripcion activa y no cuenta con dias de cortesia',
@@ -65,14 +73,6 @@ const createAssistance = async (req, res) => {
                 { _id: affiliate._id },
                 { diasDeCortesia: affiliate.diasDeCortesia - 1 }
             );
-        }
-
-        // valida si ya existe una asistencia registrada el mismo dia
-        if (isAssistanceCreatedSameDay.length) {
-            return res.status(400).json({
-                success: false,
-                message: 'No es necesario registrar la asistencia, ya se encuentra registrada',
-            });
         }
 
         // crea la asistencia
