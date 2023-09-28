@@ -43,11 +43,18 @@ const createAssistance = async (req, res) => {
             activo: true,
         });
 
-        // valida si tiene dias de cortesia y si la suscripcion esta activa
-        if (affiliate.diasDeCortesia === 0 && !isActiveSuscription || isActiveSuscription?.activo === false) {
+        if(!isActiveSuscription || isActiveSuscription?.activo === false) {
             return res.status(400).json({
                 success: false,
                 message: 'El afiliado no tiene una suscripcion activa',
+            });
+        }
+
+        // valida si tiene dias de cortesia
+        if (affiliate.diasDeCortesia === 0 && isActiveSuscription?.activo === false) {
+            return res.status(400).json({
+                success: false,
+                message: 'El afiliado no tiene una suscripcion activa y no cuenta con dias de cortesia',
             });
         }
 
