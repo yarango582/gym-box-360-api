@@ -28,12 +28,12 @@ const createAssistance = async (req, res) => {
             });
         }
 
+        const today = moment(new Date()).format('YYYY-MM-DD');
         // valida si ya existe una asistencia registrada el mismo dia
         const isAssistanceCreatedSameDay = await Assistance.find({
             numeroDocumento: reqBody.numeroDocumento,
             fechaDeAsistencia: {
-                $gte: new Date(reqBody.fechaDeAsistencia).setHours(0, 0, 0),
-                $lt: new Date(reqBody.fechaDeAsistencia).setHours(23, 59, 59),
+                $gte: today
             },
         });
 
@@ -121,38 +121,29 @@ const getAssistanceById = async (req, res) => {
 
 const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
-
         const date = new Date();
         const today = moment(date).format('YYYY-MM-DD');
-        console.log({today});
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
                 $gte: today,
             },
         });
-
         if (!assistances.length) {
             return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
         }
-
         const assistancesWithAffiliate = await Promise.all(assistances.map(async (assistance) => {
             const affiliate = await Affiliate.findOne({
                 numeroDocumento: assistance.numeroDocumento,
             });
-
-            // Return the assistance with the affiliate and subscription
             const suscription = await AffiliateSuscription.findOne({
                 idAfiliado: affiliate._id,
             });
-
             return {
                 ...assistance._doc,
                 affiliate: affiliate._doc,
                 suscription: suscription._doc,
             };
-
         }));
-
         return res.status(200).json({ success: true, message: 'ok', data: assistancesWithAffiliate });
     } catch (err) {
         return res.status(400).json({ success: false, error: err });
@@ -169,14 +160,11 @@ const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
                 const numeroDocumento = affiliateSuscription?.idAfiliado?.numeroDocumento;
                 if (numeroDocumento) {
                     try {
-                        const colombiaTimezone = 'America/Bogota'; // Set the timezone to Colombia
-                        const currentDate = moment.tz(colombiaTimezone).toDate();
-                        const startOfDay = moment(currentDate).startOf('day').toDate();
-                        const endOfDay = moment(currentDate).endOf('day').toDate();
+                        const date = new Date();
+                        const today = moment(date).format('YYYY-MM-DD');
                         const assistance = await Assistance.find({
                             fechaDeAsistencia: {
-                                $gte: startOfDay,
-                                $lt: endOfDay,
+                                $gte: today,
                             },
                         });
                         if (!assistance) {
@@ -190,7 +178,7 @@ const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
         );
 
         const affiliatesFulfilled = results.map((result) => {
-            if(result.status === 'fulfilled') {
+            if (result.status === 'fulfilled') {
                 return {
                     affiliate: result.value,
                 }
