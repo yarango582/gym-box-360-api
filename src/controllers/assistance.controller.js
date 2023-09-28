@@ -1,9 +1,10 @@
 const Assistance = require('../models/assistance.model');
 const Affiliate = require('../models/affiliates.model');
 const AffiliateSuscription = require('../models/affiliatesSuscription.model');
-const moment = require('moment');
+const moment = require('moment-timezone');
 
-const today = moment(new Date()).utcOffset('-05:00').format('YYYY-MM-DD:HH:mm:ss');
+const colombiaTime = moment().tz('America/Bogota');
+const today = colombiaTime.format('YYYY-MM-DD HH:mm:ss');
 
 const createAssistance = async (req, res) => {
     try {
@@ -60,9 +61,10 @@ const getAssistanceById = async (req, res) => {
 const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
         // obtenen ano mes y dia de hoy para filtrar las asistencias con formato y zona horaria de colombia
-        const year = moment(new Date()).utcOffset('-05:00').format('YYYY');
-        const month = moment(new Date()).utcOffset('-05:00').format('MM');
-        const day = Number(moment(new Date()).utcOffset('-05:00').format('DD'));
+        const colombiaTime = moment().tz('America/Bogota');
+        const year = colombiaTime.format('YYYY');
+        const month = colombiaTime.format('MM');
+        const day = Number(colombiaTime.format('DD'));
 
         const assistances = await Assistance.find();
         if (!assistances.length) {
@@ -70,9 +72,9 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
         }
 
         const assistancesToday = assistances.filter((assistance) => {
-            const assistanceYear = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('YYYY');
-            const assistanceMonth = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('MM');
-            const assistanceDay = Number(moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('DD'));
+            const assistanceYear = moment(assistance.fechaDeAsistencia).tz('America/Bogota').format('YYYY');
+            const assistanceMonth = moment(assistance.fechaDeAsistencia).tz('America/Bogota').format('MM');
+            const assistanceDay = Number(moment(assistance.fechaDeAsistencia).tz('America/Bogota').format('DD'));
             return assistanceYear === year && assistanceMonth === month && assistanceDay === day;
         });
 
@@ -102,26 +104,31 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
 
 const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
     try {
+        // Obtén la fecha actual en la zona horaria de Colombia
+        const colombiaTime = moment().tz('America/Bogota');
+        const day = Number(colombiaTime.format('DD'));
+
+        // Obtén afiliados con suscripciones activas
         const affiliatesWithSuscriptions = await AffiliateSuscription.find({ activo: true }).populate('idAfiliado');
         const allAssistances = await Assistance.find();
-        const day = Number(moment(new Date()).utcOffset('-05:00').format('DD'));
+
         const nonAttendanceAffiliates = [];
 
         affiliatesWithSuscriptions.forEach((affiliateSuscription) => {
             const numeroDocumento = affiliateSuscription.idAfiliado.numeroDocumento;
             let hasAttendance = false; // Flag to track attendance
 
-            for (let i = 0; i < allAssistances.length; i++) {
-                const assistanceDay = Number(
-                    moment(allAssistances[i].fechaDeAsistencia).utcOffset('-05:00').format('DD')
-                );
-                if (allAssistances[i].numeroDocumento === numeroDocumento && assistanceDay === day) {
-                    hasAttendance = true; // Mark attendance found
-                    break; // No need to check further
-                }
-            }
+            allAssistances.forEach((assistance) => {
+                // Obtén el día de la asistencia en la zona horaria de Colombia
+                const assistanceDay = Number(moment(assistance.fechaDeAsistencia).tz('America/Bogota').format('DD'));
 
-            // If there is no attendance for the current affiliate, add them to the nonAttendanceAffiliates array
+                if (assistance.numeroDocumento === numeroDocumento && assistanceDay === day) {
+                    hasAttendance = true; // Marcar asistencia encontrada
+                    return; // No es necesario verificar más
+                }
+            });
+
+            // Si no hay asistencia para el afiliado actual, agrégalo a la matriz nonAttendanceAffiliates
             if (!hasAttendance) {
                 nonAttendanceAffiliates.push(affiliateSuscription);
             }
@@ -133,6 +140,7 @@ const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Hubo un error al obtener los datos!', error });
     }
 };
+
 
 
 
