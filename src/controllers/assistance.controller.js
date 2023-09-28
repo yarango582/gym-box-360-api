@@ -142,7 +142,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
             const assistanceYear = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('YYYY');
             const assistanceMonth = moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('MM');
             const assistanceDay = Number(moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('DD'));
-            return assistanceYear === year && assistanceMonth === month && assistanceDay === day-1;
+            return assistanceYear === year && assistanceMonth === month && assistanceDay === day;
         });
 
         const assistancesWithAffiliate = await Promise.all(assistancesToday.map(async (assistance) => {
