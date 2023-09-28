@@ -118,18 +118,26 @@ const getAssistanceById = async (req, res) => {
     }
 };
 
-const getAssistancesTodayWithAffiliate = async (req, res) => {
 
+const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
-        const colombiaTimezone = 'America/Bogota'; // Set the timezone to Colombia
-        const currentDate = moment.tz(colombiaTimezone).toDate();
-        const startOfDay = moment(currentDate).startOf('day').toDate();
-        const endOfDay = moment(currentDate).endOf('day').toDate();
+        const colombiaTimezone = 'America/Bogota';
+
+
+        const currentDate = moment().tz(colombiaTimezone);
+        console.log(currentDate);
+        console.log(new Date());
+
+
+        const startOfDay = currentDate.startOf('day');
+        const endOfDay = currentDate.endOf('day');
+
+        console.log({ startOfDay, endOfDay });
 
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
-                $gte: startOfDay,
-                $lt: endOfDay,
+                $gte: startOfDay.toDate(),
+                $lt: endOfDay.toDate(),
             },
         });
 
@@ -141,8 +149,8 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
             const affiliate = await Affiliate.findOne({
                 numeroDocumento: assistance.numeroDocumento,
             });
-            // deuelve la asistencia con el afiliado y suscripcion
 
+            // Return the assistance with the affiliate and subscription
             const suscription = await AffiliateSuscription.findOne({
                 idAfiliado: affiliate._id,
             });
@@ -160,6 +168,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
         return res.status(400).json({ success: false, error: err });
     }
 };
+
 
 const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
     try {
