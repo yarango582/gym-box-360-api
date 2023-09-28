@@ -43,7 +43,7 @@ const createAssistance = async (req, res) => {
             activo: true,
         });
 
-        if(!isActiveSuscription || isActiveSuscription?.activo === false) {
+        if (!isActiveSuscription || isActiveSuscription?.activo === false) {
             return res.status(400).json({
                 success: false,
                 message: 'El afiliado no tiene una suscripcion activa',
@@ -145,6 +145,9 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
             return assistanceYear === year && assistanceMonth === month && assistanceDay === day;
         });
 
+        if (assistancesToday.length === 0) {
+            return res.status(400).json({ success: true, message: 'No hay assistencias registradas hoy', data: assistancesToday });
+        }
         const assistancesWithAffiliate = await Promise.all(assistancesToday.map(async (assistance) => {
             const affiliate = await Affiliate.findOne({
                 numeroDocumento: assistance.numeroDocumento,
@@ -169,7 +172,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
 
 const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
     try {
-        const affiliatesWithSuscriptions = await AffiliateSuscription.find({ activo: true}).populate('idAfiliado');
+        const affiliatesWithSuscriptions = await AffiliateSuscription.find({ activo: true }).populate('idAfiliado');
 
         const results = await Promise.allSettled(
             affiliatesWithSuscriptions.map(async (affiliateSuscription) => {
