@@ -128,17 +128,25 @@ const getAssistanceById = async (req, res) => {
 
 const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
-       const hourAgo = moment(new Date()).utcOffset('-05:00').get('hours');
-       const date =  moment(new Date()).utcOffset('-05:00').subtract(hourAgo, 'hours').format('YYYY-MM-DD:HH:mm:ss');
-        const assistances = await Assistance.find({
-            fechaDeAsistencia: {
-                $gte: date,
-            },
-        });
+        // obtenen ano mes y dia de hoy para filtrar las asistencias con formato y zona horaria de colombia
+        const year = moment(new Date()).utcOffset('-05:00').format('YYYY');
+        const month = moment(new Date()).utcOffset('-05:00').format('MM');
+        const day = moment(new Date()).utcOffset('-05:00').format('DD');
+
+        const assistances = await Assistance.find();
         if (!assistances.length) {
             return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
         }
-        const assistancesWithAffiliate = await Promise.all(assistances.map(async (assistance) => {
+        const assistancesToday = assistances.filter((assistance) => {
+            const assistanceDate = new Date(assistance.fechaDeAsistencia);
+            return (
+                assistanceDate.getUTCFullYear() === Number(year) &&
+                assistanceDate.getUTCMonth() === Number(month) &&
+                assistanceDate.getUTCDate() === Number(day)
+            )
+        });
+
+        const assistancesWithAffiliate = await Promise.all(assistancesToday.map(async (assistance) => {
             const affiliate = await Affiliate.findOne({
                 numeroDocumento: assistance.numeroDocumento,
             });
@@ -150,6 +158,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
                 ...assistance._doc,
                 affiliate: affiliate._doc,
                 suscription: suscription._doc,
+                year, month, day
             };
         }));
         return res.status(200).json({ success: true, message: 'ok', data: assistancesWithAffiliate });
