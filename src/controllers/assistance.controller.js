@@ -137,6 +137,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
             });
             const suscription = await AffiliateSuscription.findOne({
                 idAfiliado: affiliate._id,
+                activo: true,
             });
             return {
                 ...assistance._doc,
@@ -153,7 +154,7 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
 
 const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
     try {
-        const affiliatesWithSuscriptions = await AffiliateSuscription.find().populate('idAfiliado');
+        const affiliatesWithSuscriptions = await AffiliateSuscription.find({ activo: true}).populate('idAfiliado');
 
         const results = await Promise.allSettled(
             affiliatesWithSuscriptions.map(async (affiliateSuscription) => {
