@@ -1,7 +1,7 @@
 const Assistance = require('../models/assistance.model');
 const Affiliate = require('../models/affiliates.model');
 const AffiliateSuscription = require('../models/affiliatesSuscription.model');
-const moment = require('moment-timezone');
+const moment = require('moment');
 
 
 const createAssistance = async (req, res) => {
@@ -121,23 +121,13 @@ const getAssistanceById = async (req, res) => {
 
 const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
-        const colombiaTimezone = 'America/Bogota';
 
-
-        const currentDate = moment().tz(colombiaTimezone);
-        console.log(currentDate);
-        console.log(new Date());
-
-
-        const startOfDay = currentDate.startOf('day');
-        const endOfDay = currentDate.endOf('day');
-
-        console.log({ startOfDay, endOfDay });
-
+        const date = new Date();
+        const today = moment(date).format('YYYY-MM-DD');
+        console.log({today});
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
-                $gte: startOfDay.toDate(),
-                $lt: endOfDay.toDate(),
+                $gte: today,
             },
         });
 
