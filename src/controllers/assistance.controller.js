@@ -130,9 +130,10 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
     try {
         const date = new Date();
         const today = moment(date).format('YYYY-MM-DD');
+        const todayWithHours = `${today}:00:00:00}`;
         const assistances = await Assistance.find({
             fechaDeAsistencia: {
-                $gte: today,
+                $gte: todayWithHours,
             },
         });
         if (!assistances.length) {
