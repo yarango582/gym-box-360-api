@@ -3,101 +3,32 @@ const Affiliate = require('../models/affiliates.model');
 const AffiliateSuscription = require('../models/affiliatesSuscription.model');
 const moment = require('moment');
 
+const today = moment(new Date()).utcOffset('-05:00').format('YYYY-MM-DD:HH:mm:ss');
 
 const createAssistance = async (req, res) => {
     try {
-        const reqBody = req.body;
 
-        if (!reqBody) {
-            return res.status(400).json({
-                success: false,
-                error: 'You must provide an assistance',
-            });
-        }
-
-        // valida si el usuario existe
-        const affiliate = await Affiliate.findOne({
-            numeroDocumento: reqBody.numeroDocumento,
-        });
-
-        // valida si el usuario es un afiliado
+        const { numeroDocumento } = req.body;
+        const affiliate = await Affiliate.findOne({ numeroDocumento });
         if (!affiliate) {
-            return res.status(400).json({
-                success: false,
-                message: 'El usuario no es un afiliado',
-            });
+            return res.status(404).json({ success: false, message: `Afiliado no encontrado` });
+        }
+        const suscription = await AffiliateSuscription.findOne({ idAfiliado: affiliate._id, activo: true });
+        if (!suscription) {
+            return res.status(404).json({ success: false, message: `No hay una suscripcion activa para el afiliado` });
         }
 
-        const day = moment(new Date()).utcOffset('-05:00').format('DD');
-
-        // valida si ya existe una asistencia registrada el mismo dia
-        const assistances = await Assistance.find();
-
-        const isAssistanceCreatedSameDay = assistances.filter((assistance) => {
-            const assistanceDay = Number(moment(assistance.fechaDeAsistencia).utcOffset('-05:00').format('DD'));
-            return assistanceDay === day;
+        const newAssistances = new Assistance({
+            ...req.body,
+            fechaDeAsistencia: today,
         });
 
-        if(isAssistanceCreatedSameDay.length > 1){
-            return res.status(400).json({
-                success: false,
-                message: 'No es necesario registrar la asistencia, ya se encuentra registrada',
-            });
-        }
+        await newAssistances.save();
 
-        // valida si existe una suscripcion
-        const isActiveSuscription = await AffiliateSuscription.findOne({
-            idAfiliado: affiliate._id,
-            activo: true,
-        });
+        return res.status(201).json({ success: true, message: 'Asistencia registrada correctamente' });
 
-        if (!isActiveSuscription) {
-            return res.status(400).json({
-                success: false,
-                message: 'El afiliado no tiene una suscripcion activa',
-            });
-        }
-
-        // valida si tiene dias de cortesia
-        if (affiliate.diasDeCortesia === 0 && isActiveSuscription.activo === false) {
-            return res.status(400).json({
-                success: false,
-                message: 'El afiliado no tiene una suscripcion activa y no cuenta con dias de cortesia',
-            });
-        }
-
-        // actualiza los dias de cortesia del afiliado si los dias de cortesia ya se acabaron no se actualiza
-
-        if (affiliate.diasDeCortesia > 0) {
-            await Affiliate.updateOne(
-                { _id: affiliate._id },
-                { diasDeCortesia: affiliate.diasDeCortesia - 1 }
-            );
-        }
-
-        // crea la asistencia
-        const assistance = new Assistance(reqBody);
-
-        // valida si la asistencia se creo correctamente
-        if (!assistance) {
-            return res.status(400).json({ success: false, error: err });
-        }
-
-        // guarda la asistencia
-        await assistance.save();
-
-        // retorna la asistencia creada
-        return res.status(201).json({
-            success: true,
-            id: assistance._id,
-            message: 'Asistencia registrada!',
-        });
-    } catch (err) {
-        return res.status(400).json({
-            success: false,
-            err,
-            message: 'Asistencia no creada, intenta mas tarde',
-        });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error });
     }
 };
 
@@ -160,7 +91,6 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
                 ...assistance._doc,
                 affiliate: affiliate._doc,
                 suscription: suscription._doc,
-                year, month, day
             };
         }));
         return res.status(200).json({ success: true, message: 'ok', data: assistancesWithAffiliate });
@@ -173,41 +103,37 @@ const getAssistancesTodayWithAffiliate = async (req, res) => {
 const getNonAttendanceWithAffiliateAndSuscription = async (req, res) => {
     try {
         const affiliatesWithSuscriptions = await AffiliateSuscription.find({ activo: true }).populate('idAfiliado');
+        const allAssistances = await Assistance.find();
+        const day = Number(moment(new Date()).utcOffset('-05:00').format('DD'));
+        const nonAttendanceAffiliates = [];
 
-        const results = await Promise.allSettled(
-            affiliatesWithSuscriptions.map(async (affiliateSuscription) => {
-                const numeroDocumento = affiliateSuscription?.idAfiliado?.numeroDocumento;
-                if (numeroDocumento) {
-                    try {
-                        const date = new Date();
-                        const today = moment(date).format('YYYY-MM-DD');
-                        const assistance = await Assistance.find({
-                            fechaDeAsistencia: {
-                                $gte: today,
-                            },
-                        });
-                        if (!assistance) {
-                            return { status: 'fulfilled', value: affiliateSuscription };
-                        }
-                    } catch (error) {
-                        return { status: 'rejected', reason: String(error) };
-                    }
-                }
-            })
-        );
+        affiliatesWithSuscriptions.forEach((affiliateSuscription) => {
+            const numeroDocumento = affiliateSuscription.idAfiliado.numeroDocumento;
+            let hasAttendance = false; // Flag to track attendance
 
-        const affiliatesFulfilled = results.map((result) => {
-            if (result.status === 'fulfilled') {
-                return {
-                    affiliate: result.value,
+            for (let i = 0; i < allAssistances.length; i++) {
+                const assistanceDay = Number(
+                    moment(allAssistances[i].fechaDeAsistencia).utcOffset('-05:00').format('DD')
+                );
+                if (allAssistances[i].numeroDocumento === numeroDocumento && assistanceDay === day) {
+                    hasAttendance = true; // Mark attendance found
+                    break; // No need to check further
                 }
             }
+
+            // If there is no attendance for the current affiliate, add them to the nonAttendanceAffiliates array
+            if (!hasAttendance) {
+                nonAttendanceAffiliates.push(affiliateSuscription);
+            }
         });
-        return res.status(200).json({ success: true, message: 'ok', data: affiliatesFulfilled });
+
+        return res.status(200).json({ success: true, message: 'ok', data: nonAttendanceAffiliates });
     } catch (error) {
+        console.error(error);
         return res.status(400).json({ success: false, message: 'Hubo un error al obtener los datos!', error });
     }
 };
+
 
 
 module.exports = {
