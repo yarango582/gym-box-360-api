@@ -21,7 +21,7 @@ const createAssistance = async (req, res) => {
 
         const newAssistances = new Assistance({
             ...req.body,
-            fechaDeAsistencia: today,
+            fechaDeAsistencia: new Date(),
         });
 
         await newAssistances.save();
