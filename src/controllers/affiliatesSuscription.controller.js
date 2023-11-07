@@ -16,7 +16,7 @@ const createAffiliateSuscriptionOrUpdate = async (req, res) => {
 
         const isSuscriptionCretead = await AffiliateSuscriptionModel.findOne({ idAfiliado: reqBody.idAfiliado, activo: true });
 
-        if (isSuscriptionCretead) {
+        if (isSuscriptionCretead && isSuscriptionCretead.activo) {
             // acualizar suscripcion y suma la cantidad de mesesPagados, tambien registra el pago en payments
             const affiliateSuscription = await AffiliateSuscriptionModel.findOneAndUpdate({ idAfiliado: reqBody.idAfiliado, activo: true }, { $inc: { mesesPagados: reqBody.mesesPagados } }, { new: true });
             const payment = new PaymentsModel(reqBody);
@@ -24,6 +24,27 @@ const createAffiliateSuscriptionOrUpdate = async (req, res) => {
             return res.status(201).json({
                 success: true,
                 message: "Suscripcion actualizada correctamente!",
+                data: affiliateSuscription,
+            });
+        }
+
+        if (isSuscriptionCretead && !isSuscriptionCretead.activo) {
+            // crear suscripcion y registra el pago en payments
+            // sumo un mes a la fecha anterior de pago para mantener el mismo corte
+            const newDate = moment(isSuscriptionCretead.fechaDePago).add(1, 'months').toDate();
+            const affiliateSuscription = new AffiliateSuscriptionModel({
+                idAfiliado: reqBody.idAfiliado,
+                mesesPagados: reqBody.mesesPagados,
+                fechaDePago: newDate,
+                activo: true
+            });
+            const payment = new PaymentsModel(reqBody);
+            await payment.save();
+            await affiliateSuscription.save();
+            return res.status(201).json({
+                success: true,
+                id: affiliateSuscription._id,
+                message: "Suscripcion creada correctamente!",
                 data: affiliateSuscription,
             });
         }

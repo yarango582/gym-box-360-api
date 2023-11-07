@@ -36,11 +36,26 @@ const createAssistance = async (req, res) => {
 const getAssistances = async (req, res) => {
     try {
         const assistances = await Assistance.find();
-        if (!assistances.length) {
+
+        const assistancesWithAffiliate = await Promise.all(assistances.map(async (assistance) => {
+            const affiliate = await Affiliate.findOne({
+                numeroDocumento: assistance.numeroDocumento,
+            });
+            const suscription = await AffiliateSuscription.findOne({
+                idAfiliado: affiliate._id,
+            }).sort({ fechaDePago: -1 });
+            return {
+                ...assistance,
+                affiliate: affiliate,
+                suscription: suscription,
+            };
+        }));
+        if (!assistancesWithAffiliate.length) {
             return res.status(404).json({ success: false, error: `Asistencias no encontradas` });
         }
-        return res.status(200).json({ success: true, message: 'ok', data: assistances });
+        return res.status(200).json({ success: true, message: 'ok', data: assistancesWithAffiliate });
     } catch (err) {
+        console.error(err);
         return res.status(400).json({ success: false, error: err });
     }
 };
